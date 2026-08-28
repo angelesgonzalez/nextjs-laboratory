@@ -1,5 +1,8 @@
-import { getHouseByID } from "@/lib/api";
 import { notFound } from "next/navigation"
+import { getHouseByID } from "@/lib/api";
+import { toHouseDetailVM } from "@/lib/mappers";
+
+
 
 const HouseDetailPage = async ({
     params,
@@ -13,7 +16,21 @@ const HouseDetailPage = async ({
         notFound();
     }
 
-    return <div>Detalle de casa: {house?.name}</div>;
+    const detail = toHouseDetailVM(house);
+
+
+    return (
+
+        <article>
+            <div>
+                <h1>{detail.title}</h1>
+                <p>{detail.price}</p>
+            </div>
+        </article>
+
+
+
+    )
 };
 
 export default HouseDetailPage;
