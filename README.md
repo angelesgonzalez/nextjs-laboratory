@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Casas Rurales — Next.js
 
-## Getting Started
+Rural house rental listing built with Next.js for the MetaFrameworks lab. Two screens: house listing and house detail, both pulling from the mock API server provided on the exercise.
 
-First, run the development server:
+## Demo
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+| Listing                                | Detail                                       |
+| -------------------------------------- | -------------------------------------------- |
+| ![House listing](./demo/demo-list.png) | ![House detail](./demo/demo-page-detail.png) |
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js 16 + TypeScript
+- Tailwind CSS v4
+- Mock API: [master-frontend-metaframeworks-lab](https://github.com/Lemoncode/master-frontend-metaframeworks-lab) (Hono server, port 3001)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Decisions
 
-## Learn More
+| Area               | Choice                                                                                                                 | Why                                                                                                                                                                                                        |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rendering listing  | ISR, `revalidate: 3600`                                                                                                | Data doesn't change often, but shouldn't be frozen forever like pure SSG                                                                                                                                   |
+| Rendering detail   | SSG via `generateStaticParams`                                                                                         | Small, fixed set of houses — pre-render all of them at build time instead of fetching on every request                                                                                                     |
+| Rendering at scale | Would switch to a popular subset + `dynamicParams` for detail, real pagination + on-demand `revalidateTag` for listing | Pre-rendering thousands of rarely-visited pages blows up build time; a blind timer doesn't reflect real data changes                                                                                       |
+| Routing            | App Router over Pages Router                                                                                           | Current recommended approach; each route picks its own rendering strategy with no extra config                                                                                                             |
+| Folder structure   | Layer-based (`app/`, `components/`, `lib/`) over feature-based                                                         | Single domain (houses) — splitting by feature would just add depth with no benefit                                                                                                                         |
+| Data shaping       | API → ViewModel mappers (`lib/mappers.ts`)                                                                             | Maps the raw `House` shape into view-specific shapes (`HouseCardVM`, `HouseDetailVM`) with already-formatted strings (price, location, image URL) — keeps formatting out of JSX and decoupled from the API |
+| Env vars           | Separate `API_URL` (server-only) and `NEXT_PUBLIC_API_URL` (client-visible)                                            | Same host today, but different concerns — private data fetching vs. public image URLs resolvable from the client bundle                                                                                    |
+| Images             | `next/image` + `remotePatterns` + `dangerouslyAllowLocalIP`                                                            | Needed to allow/optimize images from the mock server's `localhost:3001` host                                                                                                                               |
 
-To learn more about Next.js, take a look at the following resources:
+## What's implemented
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- House listing (`/`) with cards (image, name, location, price)
+- House detail (`/houses/[id]`) with description, address, room/bed/bath counts, and reviews
+- Navigation between both screens
+- Proper 404 handling for non-existent house IDs
+- Optimized images via `next/image`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Not implemented (optional in the assignment): search/filter, booking button.
 
-## Deploy on Vercel
+## Running locally
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Start the mock API server (from the cloned `master-frontend-metaframeworks-lab/api-server` repo):
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```
+   npm install
+   npm start
+   ```
+
+   Runs on `http://localhost:3001`.
+
+2. In this project, create `.env.local`:
+
+   ```
+   API_URL=http://localhost:3001
+   NEXT_PUBLIC_API_URL=http://localhost:3001
+   ```
+
+3. Install and run:
+
+   ```
+   npm install
+   npm run dev
+   ```
+
+   Open `http://localhost:3000`.
