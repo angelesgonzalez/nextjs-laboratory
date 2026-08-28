@@ -20,8 +20,13 @@ export async function getHouseByID(id: string): Promise<House | undefined> {
     });
 
     if (!res.ok) {
-        throw new Error(`There's been an error while fetching the house, check the api or the id.`)
+        throw new Error(`There's been an error while fetching the house, check the api.`)
     }
 
-    return res.json();
+    const text = await res.text();
+    if (!text) {
+        return undefined;
+    }
+
+    return JSON.parse(text);
 }
